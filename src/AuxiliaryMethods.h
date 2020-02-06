@@ -27,7 +27,7 @@ namespace AuxiliaryMethods {
     vector<int> split_string(string s);
 
     // Reading a graph database from txt file.
-    GraphDatabase read_graph_txt_file(string data_set_name);
+    GraphDatabase read_graph_txt_file(string base_dir, string data_set_name);
 
     // Write Gram matrix to file.
     void write_gram_matrix(const GramMatrix &gram_matrix, string file_name);

@@ -7,11 +7,13 @@
  * permission of Christopher Morris.
  *********************************************************************/
 
+#include <filesystem>
 #include "AuxiliaryMethods.h"
 
 using Eigen::IOFormat;
 using Eigen::MatrixXd;
 using namespace std;
+namespace fs = std::filesystem;
 
 namespace AuxiliaryMethods {
     vector<int> split_string(string s) {
@@ -27,19 +29,18 @@ namespace AuxiliaryMethods {
         return result;
     }
 
-    GraphDatabase read_graph_txt_file(string data_set_name) {
+    GraphDatabase read_graph_txt_file(string base_dir, string data_set_name) {
         string line;
+		string prefix = base_dir + "/" + data_set_name + "/raw/" + data_set_name + "/" + data_set_name;
         vector<uint> graph_indicator;
-        ifstream myfile(
-                "./data_sets/" + data_set_name + "/" + data_set_name +
-                "_graph_indicator.txt");
+        ifstream myfile(prefix + "_graph_indicator.txt");
         if (myfile.is_open()) {
             while (getline(myfile, line)) {
                 graph_indicator.push_back(stoi(line) - 1);
             }
             myfile.close();
         } else {
-            printf("%s", "!!! Unable to open file !!!\n");
+            cerr << "Unable to open file " << prefix << "_graph_indicator.txt" << endl;
             exit(EXIT_FAILURE);
         }
 
@@ -49,8 +50,7 @@ namespace AuxiliaryMethods {
         bool label_data = true;
         string label;
         Labels node_labels;
-        ifstream labels(
-                "./data_sets/" + data_set_name + "/" + data_set_name + "_node_labels.txt");
+        ifstream labels(prefix + "_node_labels.txt");
         if (labels.is_open()) {
             while (getline(labels, label)) {
                 node_labels.push_back(stoul(label));
@@ -76,6 +76,11 @@ namespace AuxiliaryMethods {
                     l.push_back(node_labels[j]);
                 }
             }
+			else {
+				for (unsigned long j = num_nodes; j < s + num_nodes; ++j) {
+                    l.push_back(1);
+                }
+			}
 
             num_nodes += s;
             EdgeList edge_list;
@@ -86,7 +91,7 @@ namespace AuxiliaryMethods {
 
         // Insert edges for each graph.
         vector<int> edges;
-        ifstream edge_file("./data_sets/" + data_set_name + "/" + data_set_name + "_A.txt");
+        ifstream edge_file(prefix + "_A.txt");
         if (edge_file.is_open()) {
             while (getline(edge_file, line)) {
                 vector<int> r = split_string(line);
@@ -103,22 +108,28 @@ namespace AuxiliaryMethods {
             }
             edge_file.close();
         } else {
-            printf("%s", "!!! Unable to open file !!!\n");
+            cerr << "Unable to open file " << prefix << "_A.txt" << endl;
             exit(EXIT_FAILURE);
         }
 
         return graph_database;
     }
 
-    void write_gram_matrix(const GramMatrix &gram_matrix, string file_name) {
+    void write_gram_matrix(const GramMatrix &gram_matrix, string dir_name) {
         const IOFormat CSVFormat(10, 1, ", ", "\n");
+		fs::create_directories(dir_name);
+		string file_name = dir_name + "/gram.csv";
         ofstream file(file_name.c_str());
 
-        // Convert sparse matrix to dense matrix to write it out to a file.
-        MatrixXd dense_gram_matrix(gram_matrix);
-        file << dense_gram_matrix.format(CSVFormat);
-
-        file.close();
+		if(file.is_open()) {
+	        // Convert sparse matrix to dense matrix to write it out to a file.
+	        MatrixXd dense_gram_matrix(gram_matrix);
+	        file << dense_gram_matrix.format(CSVFormat);
+			file.close();
+		} else {
+			cerr << "Unable to open file " << file_name << endl;
+            exit(EXIT_FAILURE);
+		}
     }
 
     Label pairing(const Label a, const Label b) {
