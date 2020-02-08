@@ -32,6 +32,8 @@ namespace AuxiliaryMethods {
     // Write Gram matrix to file.
     void write_gram_matrix(const GramMatrix &gram_matrix, string file_name);
 
+	bool gram_file_exists(string dir_name);
+
     // Pairing function to map to a pair of Labels to a single label.
     Label pairing(const Label a, const Label b);
 }

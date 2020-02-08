@@ -132,6 +132,12 @@ namespace AuxiliaryMethods {
 		}
     }
 
+	bool gram_file_exists(string dir_name) {
+		string file_name = dir_name + "/gram.csv";
+		ifstream f(file_name.c_str());
+		return f.good();
+	}
+
     Label pairing(const Label a, const Label b) {
         return a >= b ? a * a + a + b : a + b * b;
     }

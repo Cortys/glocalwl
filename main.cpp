@@ -35,6 +35,13 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	string out_name = base_dir + "/" + dataset_name + "/gram/" + kernel;
+
+	if(AuxiliaryMethods::gram_file_exists(out_name)) {
+		cout << "A gram matrix is already present at " << out_name << "." << endl;
+		return 0;
+	}
+
     cout << "Reading " << dataset_name << " dataset from " << base_dir << "..." << endl;
     GraphDatabase gdb = AuxiliaryMethods::read_graph_txt_file(base_dir, dataset_name);
 
@@ -50,10 +57,9 @@ int main(int argc, char **argv) {
 		gm = wl.compute_gram_matrix(3, true, false);
 	}
 
-	string out_name = base_dir + "/" + dataset_name + "/gram/" + kernel;
 	cout << "Writing " << kernel << " gram matrix of " << dataset_name << " to " << out_name << "..." << endl;
     AuxiliaryMethods::write_gram_matrix(gm, out_name);
-	cout << "Done." << endl;
+	cout << "Wrote " << kernel << " gram matrix of " << dataset_name << " to " << out_name << ". Done." << endl;
 
     return 0;
 }
