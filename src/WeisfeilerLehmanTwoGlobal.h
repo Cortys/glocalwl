@@ -13,6 +13,7 @@
 #include <cmath>
 #include <unordered_map>
 #include <queue>
+#include <atomic>
 
 #include "Graph.h"
 
@@ -20,6 +21,8 @@ using Pair = tuple<Node, Node>;
 using Triple = tuple<Node, Node, Node>;
 
 using namespace GraphLibrary;
+
+using ColorCounterMap = tbb::concurrent_unordered_map<ulong, ColorCounter>;
 
 namespace WeisfeilerLehmanTwoGlobal {
     class WeisfeilerLehmanTwoGlobal {
@@ -32,14 +35,16 @@ namespace WeisfeilerLehmanTwoGlobal {
         ~WeisfeilerLehmanTwoGlobal();
 
     private:
+        GraphDatabase m_graph_database;
+        ConcurrentColorCounter m_label_to_index;
+        std::atomic_int m_num_labels;
 
-        // Compute lables for each graph in graph database.
+		// Compute lables for each graph in graph database.
         ColorCounter
         compute_colors(const Graph &g, const uint num_iterations, const bool use_labels, const bool use_iso_type);
 
-        GraphDatabase m_graph_database;
-        ColorCounter m_label_to_index;
-        int m_num_labels;
+		void
+		compute_color_counter_map(ColorCounterMap &ccm, const uint num_iterations, const bool use_labels, const bool use_iso_type);
     };
 }
 

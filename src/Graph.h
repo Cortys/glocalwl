@@ -11,6 +11,7 @@
 #define WLFAST_GRAPH_H
 
 #include <eigen3/Eigen/Sparse>
+#include <tbb/tbb.h>
 #include <unordered_set>
 #include <vector>
 
@@ -28,6 +29,7 @@ using SpMatrix = Eigen::SparseMatrix<double>;
 using GramMatrix = SpMatrix;
 using AdjacenyMatrix = SpMatrix;
 using ColorCounter = map<Label, uint>;
+using ConcurrentColorCounter = tbb::concurrent_unordered_map<Label, uint>;
 using S = Eigen::Triplet<double>;
 
 
@@ -112,7 +114,7 @@ namespace GraphLibrary {
         Labels m_node_labels;
     };
 
-    typedef vector<Graph> GraphDatabase;
+    typedef tbb::concurrent_vector<Graph> GraphDatabase;
 }
 
 #endif //WLFAST_GRAPH_H

@@ -9,28 +9,25 @@
 
 #include "AuxiliaryMethods.h"
 #include "WeisfeilerLehmanTwoGlobal.h"
+#include <atomic>
 
 namespace WeisfeilerLehmanTwoGlobal {
-    WeisfeilerLehmanTwoGlobal::WeisfeilerLehmanTwoGlobal(const GraphDatabase &graph_database) : m_graph_database(
-            graph_database), m_label_to_index(), m_num_labels(0) {}
+    WeisfeilerLehmanTwoGlobal::WeisfeilerLehmanTwoGlobal(const GraphDatabase &graph_database) : m_graph_database(graph_database), m_label_to_index(), m_num_labels(0) {}
 
     GramMatrix WeisfeilerLehmanTwoGlobal::compute_gram_matrix(const uint num_iterations,
                                                               const bool use_labels,
                                                               bool use_iso_type) {
-        vector<ColorCounter> color_counters;
-        color_counters.reserve(m_graph_database.size());
+		ulong num_graphs = m_graph_database.size();
+		ColorCounterMap color_counters;
+		compute_color_counter_map(color_counters, num_iterations, use_labels, use_iso_type);
 
-
-        for (auto &graph: m_graph_database) {
-            color_counters.push_back(compute_colors(graph, num_iterations, use_labels, use_iso_type));
-        }
-
-
-        ulong num_graphs = m_graph_database.size();
         vector<S> nonzero_compenents;
 
         for (ulong i = 0; i < num_graphs; ++i) {
-            ColorCounter c = color_counters[i];
+            ColorCounter c = color_counters.at(i);
+
+			if(i % 10 == 0)
+				std::cout << ("Computing GWL2 nonzero components " + std::to_string(i) + "/" + std::to_string(num_graphs) + "...") << std::endl;
 
             for (const auto &j: c) {
                 Label key = j.first;
@@ -39,16 +36,29 @@ namespace WeisfeilerLehmanTwoGlobal {
                 nonzero_compenents.push_back(move(S(i, index, value)));
             }
         }
-
         GramMatrix feature_vectors(num_graphs, m_num_labels);
+		std::cout << ("Computing GWL2 feature vectors (" + std::to_string(num_graphs) + "x" + std::to_string(m_num_labels) + ") for " + std::to_string(num_graphs) + " graphs...") << std::endl;
         feature_vectors.setFromTriplets(nonzero_compenents.begin(), nonzero_compenents.end());
 
+		std::cout << ("Computing GWL2 gram matrix for " + std::to_string(num_graphs) + " graphs...") << std::endl;
         GramMatrix gram_matrix(num_graphs, num_graphs);
         gram_matrix = feature_vectors * feature_vectors.transpose();
 
         return gram_matrix;
     }
 
+	void
+	WeisfeilerLehmanTwoGlobal::compute_color_counter_map(ColorCounterMap &color_counters, const uint num_iterations, const bool use_labels, const bool use_iso_type) {
+		std::atomic_int progress_counter = 0;
+		const ulong num_graphs = m_graph_database.size();
+
+		#pragma omp parallel for
+        for (ulong k = 0; k < num_graphs; ++k) {
+			const Graph &graph = m_graph_database[k];
+            color_counters.insert(make_pair(k, compute_colors(graph, num_iterations, use_labels, use_iso_type)));
+			std::cout << ("Computed GWL2 colorings " + std::to_string(++progress_counter) + "/" + std::to_string(num_graphs) + " (" + std::to_string(k) + ").") << std::endl;
+        }
+	}
 
     ColorCounter
     WeisfeilerLehmanTwoGlobal::compute_colors(const Graph &g, const uint num_iterations, const bool use_labels,
@@ -103,8 +113,7 @@ namespace WeisfeilerLehmanTwoGlobal {
             ColorCounter::iterator it(color_map.find(new_color));
             if (it == color_map.end()) {
                 color_map.insert({{new_color, 1}});
-                m_label_to_index.insert({{new_color, m_num_labels}});
-                m_num_labels++;
+                m_label_to_index.insert({{new_color, m_num_labels++}});
             } else {
                 it->second++;
             }
@@ -149,8 +158,7 @@ namespace WeisfeilerLehmanTwoGlobal {
                 ColorCounter::iterator it(color_map.find(new_color));
                 if (it == color_map.end()) {
                     color_map.insert({{new_color, 1}});
-                    m_label_to_index.insert({{new_color, m_num_labels}});
-                    m_num_labels++;
+                    m_label_to_index.insert({{new_color, m_num_labels++}});
                 } else {
                     it->second++;
                 }
