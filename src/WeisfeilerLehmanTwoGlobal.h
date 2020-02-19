@@ -22,8 +22,6 @@ using Triple = tuple<Node, Node, Node>;
 
 using namespace GraphLibrary;
 
-using ColorCounterMap = tbb::concurrent_unordered_map<ulong, ColorCounter>;
-
 namespace WeisfeilerLehmanTwoGlobal {
     class WeisfeilerLehmanTwoGlobal {
     public:
@@ -42,9 +40,6 @@ namespace WeisfeilerLehmanTwoGlobal {
 		// Compute lables for each graph in graph database.
         ColorCounter
         compute_colors(const Graph &g, const uint num_iterations, const bool use_labels, const bool use_iso_type);
-
-		void
-		compute_color_counter_map(ColorCounterMap &ccm, const uint num_iterations, const bool use_labels, const bool use_iso_type);
     };
 }
 

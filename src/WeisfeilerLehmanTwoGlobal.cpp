@@ -18,24 +18,24 @@ namespace WeisfeilerLehmanTwoGlobal {
                                                               const bool use_labels,
                                                               bool use_iso_type) {
 		ulong num_graphs = m_graph_database.size();
-		ColorCounterMap color_counters;
-		compute_color_counter_map(color_counters, num_iterations, use_labels, use_iso_type);
+		std::atomic_int progress_counter = 0;
+		tbb::concurrent_vector<S> nonzero_compenents;
 
-        vector<S> nonzero_compenents;
-
+		#pragma omp parallel for schedule(dynamic)
         for (ulong i = 0; i < num_graphs; ++i) {
-            ColorCounter c = color_counters.at(i);
-
-			if(i % 10 == 0)
-				std::cout << ("Computing GWL2 nonzero components " + std::to_string(i) + "/" + std::to_string(num_graphs) + "...") << std::endl;
+			const Graph &graph = m_graph_database[i];
+            ColorCounter c = compute_colors(graph, num_iterations, use_labels, use_iso_type);
 
             for (const auto &j: c) {
                 Label key = j.first;
                 uint value = j.second;
-                uint index = m_label_to_index.find(key)->second;
+                uint index = m_label_to_index.at(key);
                 nonzero_compenents.push_back(move(S(i, index, value)));
             }
+
+			std::cout << ("Computed GWL2 colorings " + std::to_string(++progress_counter) + "/" + std::to_string(num_graphs) + " (" + std::to_string(i) + ").") << std::endl;
         }
+
         GramMatrix feature_vectors(num_graphs, m_num_labels);
 		std::cout << ("Computing GWL2 feature vectors (" + std::to_string(num_graphs) + "x" + std::to_string(m_num_labels) + ") for " + std::to_string(num_graphs) + " graphs...") << std::endl;
         feature_vectors.setFromTriplets(nonzero_compenents.begin(), nonzero_compenents.end());
@@ -46,19 +46,6 @@ namespace WeisfeilerLehmanTwoGlobal {
 
         return gram_matrix;
     }
-
-	void
-	WeisfeilerLehmanTwoGlobal::compute_color_counter_map(ColorCounterMap &color_counters, const uint num_iterations, const bool use_labels, const bool use_iso_type) {
-		std::atomic_int progress_counter = 0;
-		const ulong num_graphs = m_graph_database.size();
-
-		#pragma omp parallel for
-        for (ulong k = 0; k < num_graphs; ++k) {
-			const Graph &graph = m_graph_database[k];
-            color_counters.insert(make_pair(k, compute_colors(graph, num_iterations, use_labels, use_iso_type)));
-			std::cout << ("Computed GWL2 colorings " + std::to_string(++progress_counter) + "/" + std::to_string(num_graphs) + " (" + std::to_string(k) + ").") << std::endl;
-        }
-	}
 
     ColorCounter
     WeisfeilerLehmanTwoGlobal::compute_colors(const Graph &g, const uint num_iterations, const bool use_labels,
