@@ -52,6 +52,10 @@ int main(int argc, char **argv) {
 		WeisfeilerLehmanTwoLocal::WeisfeilerLehmanTwoLocal wl(gdb);
 		gm = wl.compute_gram_matrix(3, true, false);
 	}
+	else if(kernel == "LWL2_1") {
+		WeisfeilerLehmanTwoLocal::WeisfeilerLehmanTwoLocal wl(gdb);
+		gm = wl.compute_gram_matrix(1, true, false);
+	}
 	else if(kernel == "GWL2") {
 		WeisfeilerLehmanTwoGlobal::WeisfeilerLehmanTwoGlobal wl(gdb);
 		gm = wl.compute_gram_matrix(3, true, false);
